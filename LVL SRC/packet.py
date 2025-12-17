@@ -1,5 +1,5 @@
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
+from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import pad, unpad
 from protobuf_decoder.protobuf_decoder import Parser
 import asyncio
 import json
@@ -75,7 +75,7 @@ async def CreateProtobufPacket(fields):
         return bytes(packet)
     except Exception as e:
         raise ValueError(f"Failed to create protobuf packet: {e}")
-    
+
 async def ParseResults(parsed_results):
     try:
         result_dict = {}
@@ -89,7 +89,7 @@ async def ParseResults(parsed_results):
         return result_dict
     except Exception as e:
         raise ValueError(f"Failed to parse results: {e}")
-    
+
 async def DecodeProtobufPacket(hex_data):
     try:
         parsed_results = Parser().parse(hex_data)
@@ -97,31 +97,31 @@ async def DecodeProtobufPacket(hex_data):
         return json.dumps(parsed_results_dict)
     except Exception as e:
         raise ValueError(f"Failed to decode protobuf packet: {e}")
-    
+
 async def GlitchFixKick(player_id, key, iv):
     fields = {1: 35, 2: {1: int(player_id)}}
     return await GenPacket((await CreateProtobufPacket(fields)).hex(), '0519', key, iv)
-    
+
 async def LeaveTeam(bot_uid, key, iv):
     fields = {1: 7, 2: {1: bot_uid}}
     return await GenPacket((await CreateProtobufPacket(fields)).hex(), '0519', key, iv)
-    
+
 async def StartGame(bot_uid, key, iv):
     fields = {1: 9, 2: {1: bot_uid}}
     return await GenPacket((await CreateProtobufPacket(fields)).hex(), '0519', key, iv)
-    
+
 async def SwitchLoneWolfDuel(bot_uid, key, iv):
     fields = {1: 17, 2: {1: bot_uid, 2: 1, 3: 1, 4: 43, 5: "\u000b", 8: 1, 19: 1}}
     return await GenPacket((await CreateProtobufPacket(fields)).hex(), '0519', key, iv)
-    
+
 async def InvitePlayer(player_id, key, iv):
     fields = {1: 2, 2: {1: int(player_id), 2: "ME", 4: 1}}
     return await GenPacket((await CreateProtobufPacket(fields)).hex(), '0519', key, iv)
-    
+
 async def PlayerStatus(player_id, key, iv):
     fields = {1: 1, 2: {1: int(player_id), 5: 1}}
     return await GenPacket((await CreateProtobufPacket(fields)).hex(), '0F19', key, iv)
-    
+
 async def SwitchLoneWolf(key, iv):
     fields = {1: 1, 2: {2: "\u000b", 3: 43, 4: 1, 5: "en", 9: 1, 10: "\u0001\t\n\u000b\u0012\u0019\u001a ", 11: 1, 13: 1, 14: {2: 86, 6: 11, 8: "1.118.10", 9: 3, 10: 1}}}
     return await GenPacket((await CreateProtobufPacket(fields)).hex(), '0519', key, iv)
@@ -130,13 +130,13 @@ async def GenPacket(packet, header_type, key, iv):
     try:
         encrypted_packet = await EncryptPacket(packet, key, iv)
         length_hex = await DecodeHex(len(encrypted_packet) // 2)
-        
+       
         padding_map = {2: "000000", 3: "00000", 4: "0000", 5: "000"}
         padding = padding_map.get(len(length_hex), "")
-        
+       
         if not padding:
             raise ValueError(f"Unsupported packet length: {len(length_hex)}")
-            
+           
         header = header_type + padding
         return bytes.fromhex(header + length_hex + encrypted_packet)
     except Exception as e:

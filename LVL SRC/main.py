@@ -259,7 +259,7 @@ class FF_CLIENT:
                             LoneWolfMode = await SwitchLoneWolf(self.key, self.iv)
                             LoneWolfModeResponse = await self.SendPacket(LoneWolfMode)
                             await asyncio.sleep(1)
-                            LoneWolfModeDuel = await SwitchLoneWolfDule(self.BotUid, self.key, self.iv)
+                            LoneWolfModeDuel = await SwitchLoneWolfDuel(self.BotUid, self.key, self.iv)
                             LoneWolfModeDuelResponse = await self.SendPacket(LoneWolfModeDuel)
                             await asyncio.sleep(1)
                             InvitePlayerId = await InvitePlayer(self.InvitePlayerId, self.key, self.iv)
@@ -269,14 +269,13 @@ class FF_CLIENT:
                             StartLoneWolfResponse = await self.SendPacket(StartLoneWolf)
                             MatchStartData = await self.MatchmakingStatus()
                             if "4" in MatchStartData and MatchStartData["4"]["data"] == 5:
-                                print("Match found")
+                                print("Match found - Starting bot automation")
                                 if "5" in MatchStartData and "data" in MatchStartData["5"]:
                                      server_data = MatchStartData["5"]["data"]
                                      if "7" in server_data and server_data["7"]["data"] == 43:
                                          game_mode = "LONE WOLF"
                                          print(f"GAME MODE: {game_mode}")
-                                await asyncio.sleep(30)
-                                print("DEBUG: 30-second delay finished")
+                                await self.StartBotAutomation()
                                 return
                             else:
                                 print("Match Data Not Found")
@@ -430,8 +429,52 @@ class FF_CLIENT:
                 except asyncio.CancelledError:
                     pass
         
+    async def StartBotAutomation(self):
+        try:
+            print("Bot automation started - Playing match")
+            await asyncio.sleep(10)
+            
+            x, y, z = 100, 100, 0
+            for i in range(80):
+                x += 4
+                y += 3
+                movement_packet = await PlayerMovement(self.InvitePlayerId, x, y, z, self.key, self.iv)
+                await self.SendPacket(movement_packet)
+                
+                if i % 8 == 0:
+                    weapon_packet = await PickupWeapon(self.InvitePlayerId, 101, self.key, self.iv)
+                    await self.SendPacket(weapon_packet)
+                
+                if i % 12 == 0:
+                    shoot_packet = await ShootPlayer(self.InvitePlayerId, int(self.InvitePlayerId) + 1, self.key, self.iv)
+                    await self.SendPacket(shoot_packet)
+                    reload_packet = await ReloadWeapon(self.InvitePlayerId, self.key, self.iv)
+                    await self.SendPacket(reload_packet)
+                
+                if i % 15 == 0:
+                    health_packet = await UseHealthKit(self.InvitePlayerId, self.key, self.iv)
+                    await self.SendPacket(health_packet)
+                
+                if i % 6 == 0:
+                    crouch_packet = await Crouch(self.InvitePlayerId, self.key, self.iv)
+                    await self.SendPacket(crouch_packet)
+                
+                await asyncio.sleep(0.4)
+            
+            print("Match completed - Checking status")
+            status_packet = await CheckMatchStatus(self.InvitePlayerId, self.key, self.iv)
+            await self.SendPacket(status_packet)
+            await asyncio.sleep(5)
+            
+            restart_packet = await RestartMatch(self.BotUid, self.key, self.iv)
+            await self.SendPacket(restart_packet)
+            print("Match restarted - Ready for next game")
+            
+        except Exception as e:
+            print(f"Bot automation error: {e}")
+    
     async def Main(self):
-        Uid = '4215946226'; Password = 'B8C01D45B946C06302C97CF29A8355D6B2C0F78293AECC4AAEB9B5AF616950B5'
+        Uid = USER_ID; Password = PASSWORD
         if self.InvitePlayerId == None:
             self.InvitePlayerId = input("EnTer Uid To STarT LvL Up! : ")
         open_id, access_token = await GeNeRaTeAccEss(Uid, Password)
